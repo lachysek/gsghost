@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Anon Ghost Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        .jumbotron {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+        }
+        .form-control {
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            border: 1px solid #444;
+        }
+        .form-control::placeholder {
+            color: #888;
+        }
+        .btn-primary, .btn-success {
+            background-color: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+        .btn-primary:hover, .btn-success:hover {
+            background-color: #555;
+            border-color: #666;
+        }
+        .form-text {
+            color: #888;
+        }
+        #chat-section {
+            height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #555 #1e1e1e; /* Firefox */
+        }
+        #chat-section::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-section::-webkit-scrollbar-thumb {
+            background-color: #555;
+        }
+        #form-control {
+            height: calc(100% - 100px);
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container pt-3">
+  <div class="jumbotron" id="login-section">
+    <form id="login-form" autocomplete="off">
+      <div class="form-group">
+        <label for="username">Jméno</label>
+        <input type="text" class="form-control" id="username" placeholder="Zadej jméno do chatu (ne tvoje pravé!)" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label for="password">Heslo</label>
+        <input type="password" class="form-control" id="password" placeholder="Heslo, které jsi obdržel" required autocomplete="off">
+      </div>
+      <button type="submit" class="btn btn-primary">Přihlásit se</button>
+    </form>
+  </div>
+  <div class="jumbotron d-none" id="chat-section">
+    <ul id="form-control"></ul>
+    <form id="form" autocomplete="off">
+      <div class="form-group">
+        <input type="text" class="form-control" id="input" aria-describedby="messageH" placeholder="Zpráva.." autocomplete="off">
+        <button type="submit" class="btn btn-success">Odeslat</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  const socket = io('http://melo.pylex.xyz/');
+
+  document.getElementById('login-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    socket.emit('login', { username, password });
+  });
+
+  socket.on('login response', (success) => {
+    if (success) {
+      document.getElementById('login-section').classList.add('d-none');
+      document.getElementById('chat-section').classList.remove('d-none');
+    } else {
+      alert('Incorrect password');
+    }
+  });
+
+  const messageForm = document.getElementById('form');
+  const textInput = document.getElementById('input');
+
+  messageForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (textInput.value) {
+      socket.emit('new message', textInput.value);
+      textInput.value = '';
+    }
+  });
+
+  socket.on('send message', (data) => {
+    const messageList = document.getElementById('form-control');
+    const chatItem = document.createElement('li');
+    chatItem.innerHTML = '<strong>' + data.user + '</strong>' + ': ' + data.message;
+    messageList.appendChild(chatItem);
+    messageList.scrollTop = messageList.scrollHeight;
+    if (data.color) {
+        chatItem.style.color = data.color;
+    }
+    if (data.user === "") {
+        chatItem.innerHTML = data.message;
+    }
+  });
+</script>
+</body>
+</html>
